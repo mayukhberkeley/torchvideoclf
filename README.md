@@ -36,5 +36,13 @@ You should run the below in the above container
 
 - Run the train.py to train the model on the images we downloaded
   - The code used GPU by default, you can change it via the --device parameter when running
+    
+    `python3 train.py --train-dir=dataset/train --val-dir=dataset/val --output-dir=checkpoint --pretrained`
+    
+    export port 6006 in the container
+    
+    run `tensorboard --logdir=runs` in another session 
+    
+    goto https://<url>:6006 to view the training metrics
 
 - Run a test

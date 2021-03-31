@@ -29,6 +29,7 @@ def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, devi
     metric_logger.add_meter('lr', SmoothedValue(window_size=1, fmt='{value}'))
     metric_logger.add_meter('clips/s', SmoothedValue(window_size=10, fmt='{value:.3f}'))
     running_loss = 0.0
+    running_accuracy = 0.0
     header = 'Epoch: [{}]'.format(epoch)
     cntr = 0
     for video, target in metric_logger.log_every(data_loader, print_freq, header):
@@ -44,11 +45,20 @@ def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, devi
 
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         batch_size = video.shape[0]
-        if cntr % 10 == 9:
+        running_loss += loss.item()
+        running_accuracy += acc1.item()
+        if cntr % 10 == 9: #average loss over the accumulated mini-batch
             writer.add_scalar('training loss',
                               running_loss / 10,
                               epoch * len(data_loader) + cntr)
+            writer.add_scalar('learning rate',
+                              optimizer.param_groups[0]["lr"],
+                              epoch * len(data_loader) + cntr)
+            writer.add_scalar('accuracy',
+                              running_accuracy / 10,
+                              epoch * len(data_loader) + cntr)
             running_loss = 0.0
+            running_accuracy = 0.0
         cntr = cntr + 1
         metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
