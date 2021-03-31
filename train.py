@@ -9,6 +9,7 @@ import torch.utils.data
 from torch.utils.data.dataloader import default_collate
 import torchvision
 from torch import nn
+from torch.utils.tensorboard import SummaryWriter
 
 def makedir(path):
     try:
@@ -20,13 +21,14 @@ def makedir(path):
 def collate_fn(batch):
     return default_collate(batch)
 
-def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq):
+def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, writer):
     model.train()
     metric_logger = MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', SmoothedValue(window_size=1, fmt='{value}'))
     metric_logger.add_meter('clips/s', SmoothedValue(window_size=10, fmt='{value:.3f}'))
-
+    running_loss = 0.0
     header = 'Epoch: [{}]'.format(epoch)
+    cntr = 0
     for video, target in metric_logger.log_every(data_loader, print_freq, header):
         start_time = time.time()
         video, target = video.to(device), target.to(device)
@@ -40,6 +42,12 @@ def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, devi
 
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         batch_size = video.shape[0]
+        if cntr % 10 == 9:
+            writer.add_scalar('training loss',
+                              running_loss / 10,
+                              epoch * len(data_loader) + cntr)
+            cntr=cntr+1
+            running_loss = 0.0
         metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
         metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
@@ -47,7 +55,7 @@ def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, devi
         lr_scheduler.step()
 
 
-def evaluate(model, criterion, data_loader, device):
+def evaluate(model, criterion, data_loader, device, writer):
     model.eval()
     metric_logger = MetricLogger(delimiter="  ")
     header = 'Test:'
@@ -111,11 +119,23 @@ def main(args):
         warmup_iters=warmup_iters, warmup_factor=1e-5)
 
     print("Start training")
+    writer = SummaryWriter('runs/vc_experiment_1')
     start_time = time.time()
     for epoch in range(args.epochs):
         train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader,
                         device, epoch, args.print_freq)
         evaluate(model, criterion, data_loader_eval, device=device)
+
+        if args.output_dir:
+            checkpoint = {
+                'model': model.state_dict(),
+                'optimizer': optimizer.state_dict(),
+                'lr_scheduler': lr_scheduler.state_dict(),
+                'epoch': epoch,
+                'args': args}
+            print("Saving checkpoint to {}".format(os.path.join(args.output_dir, 'checkpoint.pth')))
+            torch.save(checkpoint, os.path.join(args.output_dir, 'checkpoint.pth'))
+
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))
@@ -146,7 +166,7 @@ def parse_args():
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
     parser.add_argument('--lr-warmup-epochs', default=10, type=int, help='number of warmup epochs')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
-    parser.add_argument('--output-dir', default='.', help='path where to save')
+    parser.add_argument('--output-dir', default='.', help='path where to save the model checkpoint')
     parser.add_argument(
         "--pretrained",
         dest="pretrained",
