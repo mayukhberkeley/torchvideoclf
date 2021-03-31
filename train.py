@@ -11,6 +11,8 @@ import torchvision
 from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 
+
+
 def makedir(path):
     try:
         os.makedirs(path)
@@ -46,8 +48,8 @@ def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, devi
             writer.add_scalar('training loss',
                               running_loss / 10,
                               epoch * len(data_loader) + cntr)
-            cntr=cntr+1
             running_loss = 0.0
+        cntr = cntr + 1
         metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
         metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
@@ -55,7 +57,7 @@ def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, devi
         lr_scheduler.step()
 
 
-def evaluate(model, criterion, data_loader, device, writer):
+def evaluate(model, criterion, data_loader, device):
     model.eval()
     metric_logger = MetricLogger(delimiter="  ")
     header = 'Test:'
@@ -123,7 +125,7 @@ def main(args):
     start_time = time.time()
     for epoch in range(args.epochs):
         train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader,
-                        device, epoch, args.print_freq)
+                        device, epoch, args.print_freq, writer)
         evaluate(model, criterion, data_loader_eval, device=device)
 
         if args.output_dir:
