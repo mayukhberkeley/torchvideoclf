@@ -1,4 +1,4 @@
-from utils.videotoimages import *
+from utils.VideoToImages import *
 import os
 import errno
 
