@@ -1,4 +1,4 @@
-from utils.videotoimages import *
+from utils.VideoToImages import *
 from utils.CustomVideoDataset import *
 from utils.WarmupMultiStepLR import *
 from utils.MetricLogger import *

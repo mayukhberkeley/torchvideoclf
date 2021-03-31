@@ -1,10 +1,11 @@
 import os.path
-from utils.videodownloader import *
+from utils.VideoDownloader import *
 import imageio
 from PIL import Image
 import os
 import traceback
 import sys
+import ast
 
 """
     Downloads videos from youtube and generates images for training
@@ -12,7 +13,7 @@ import sys
     It will also generate the annotations file that will have the TOC for the videos in the downloaded path, annotated with the classes
     The class ids are automatically derived from the labels provided in the video list
 """
-def YoutubeVideoToImages(video_list, clip_len=None, save_images=True, save_videos=False, rootpath=None, videopath=None):
+def YoutubeVideoToImages(video_list_path, clip_len=None, save_images=True, save_videos=False, rootpath=None, videopath=None):
     """
         Arg: video_list is a dictionary of url (a youtube video link) and the category: string having the format
              {url, start_seconds, end_seconds, category/class/label} of the video
@@ -42,7 +43,12 @@ def YoutubeVideoToImages(video_list, clip_len=None, save_images=True, save_video
         os.remove(annotationsfilepath)
     except:
         print("Error removing the annotations file {}".format(annotationsfilepath))
-    for vl in video_list:
+    #open the video list
+    print("Opening video list {}".format(video_list_path))
+    with open(video_list_path, "r") as f:
+        video_list = f.read()
+    res = ast.literal_eval(video_list)
+    for vl in res:
         try:
             # get the metadata for the video
             if 'url' in vl:
