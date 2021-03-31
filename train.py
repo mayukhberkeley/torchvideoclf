@@ -131,7 +131,7 @@ def parse_args():
                         help='number of frames per clip')
     parser.add_argument('--clips-per-video', default=5, type=int, metavar='N',
                         help='maximum number of clips per video to consider')
-    parser.add_argument('-b', '--batch-size', default=24, type=int)
+    parser.add_argument('-b', '--batch-size', default=8, type=int)
     parser.add_argument('--epochs', default=25, type=int, metavar='N',
                         help='number of total epochs to run')
     parser.add_argument('-j', '--workers', default=10, type=int, metavar='N',

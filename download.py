@@ -42,7 +42,7 @@ def main(args):
                 video_save_dir = args.video_traindir
             else:
                 video_save_dir = None
-            YoutubeVideoToImages(args.train_video_list, clip_len=args.clip_len, videopath=video_save_dir,
+            YoutubeVideoToImages(args.val_video_list, clip_len=args.clip_len, videopath=video_save_dir,
                                  rootpath=args.dataset_valdir)
 
     # if the test list is provided
